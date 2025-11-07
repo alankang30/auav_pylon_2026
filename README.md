@@ -25,9 +25,11 @@ Teams are asked to create GNC packages in Robot Operating Software 2 (ROS2). Ple
 The Python-based controller script is organized as follows:
 ```
 sim_recs_ros_xtrack.py
-┗ cross_tracker.py
-┗ tecs_xtrack_sample.py
+┗ cross_tracker_nav_sample.py
+┗ tecs_controller_xtrack_sample.py
 ```
+
+Note: In simulator, the controller uses the parameters from `sim.yaml`. For your reference in hardware implementation on the Sport Cub S2, the tuned solution uses the parameters from `cub1.yaml`.
 
 The sample solution uses Total Energy Control System (TECS), a cascaded propotional-integral controller, to control the vehicle's airborne states and a form of cross-track minimization navigation algorhm, the sample solution allows autonomous fixed-wing vehicle flights.
 
