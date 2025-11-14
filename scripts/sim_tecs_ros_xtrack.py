@@ -403,9 +403,9 @@ class PIDPublisher(Node):
                 self.dt, control_point, self.current_WP_ind
             )
 
-            print(
-                "Continueing circuit...Returning to Waypoint %s" % (self.current_WP_ind)
-            )
+            # print(
+            #     "Continueing circuit...Returning to Waypoint %s" % (self.current_WP_ind)
+            # )
 
         if self.flight_mode == "airborne":
 

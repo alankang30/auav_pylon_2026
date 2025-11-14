@@ -62,7 +62,12 @@ Running the simulator
 ```
 ros2 launch auav_pylon_2026 fixedwing_sim.xml
 ```
-The launch script should launch a simulation with RVIZ2 visualizer by default.
+The launch script should launch a simulation with RVIZ2 visualizer by default with automatic scoring and course mapping off. To start the simulator with the pylon course map and the simulator, set ```score:=true``` along with your launch command.
+
+```
+ros2 launch auav_pylon_2026 fixedwing_sim.xml score:=true
+```
+
 
 The real-time simulation can be viewed from RVIZ2 or another ROS2 topic visualizer. 
 
