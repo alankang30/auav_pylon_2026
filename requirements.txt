@@ -1,0 +1,4 @@
+pyyaml
+numpy
+transforms3d
+casadi

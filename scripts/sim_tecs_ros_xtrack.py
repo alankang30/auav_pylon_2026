@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import rclpy
+import rclpy #ROS2
 from rclpy.node import Node
 from rclpy.time import Time
 from geometry_msgs.msg import Twist, PoseStamped
