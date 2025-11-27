@@ -1,4 +1,8 @@
+scipy
 pyyaml
 numpy
 transforms3d
 casadi
+beartype
+setuptools
+sympy
