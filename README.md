@@ -53,6 +53,12 @@ cd ..
 colcon build --symlink-install
 ```
 
+Pip install all requirements using
+```
+pip install -r requirements.txt
+```
+I'd recommend using a venv.
+
 Source the workspace
 ```
 source install/setup.bash
