@@ -1,4 +1,3 @@
-
 import numpy as np
 
 ######################
@@ -29,7 +28,6 @@ class XTrack_NAV_lookAhead:
         )
         self.v_cruise = 10.0  # cruise airspeed (scaled)
         self.wpt_rad = 3.0  # allowable error from target waypoint (m)
-        self.phi_threshold = 12 #phi threshold in degrees
 
         self.wpt_switching_distance = (
             1.0  # Look ahead for x meters along track and jump to next waypoint
@@ -39,7 +37,6 @@ class XTrack_NAV_lookAhead:
         self.lookahead_time_s = 2.0  # seconds to look ahead along path
         self.lookahead_min_m = 2.0  # never look ahead less than this distance
         self.lookahead_max_m = 20.0  # cap look-ahead to prevent cutting corners
-        self.g = 9.81
 
     def get_desired_flight(
         self, next_wpt, current_pose, Vx_speed, Vy_speed, verbose=False
@@ -53,91 +50,15 @@ class XTrack_NAV_lookAhead:
         # Compute desired airspeed (velocity)
         des_v = self.v_cruise  # fix desired velocity to be desired cruise speed
 
-        #compute constants
-        v_g = np.sqrt(Vx_speed**2 + Vy_speed**2) #ground speed
-        phi = np.arctan2(Vy_speed, Vx_speed) #current horizontal angle
-
-        r_min = (v_g**2) / (self.g * np.tan(np.deg2rad(30))) #min turning radius
-
-
-        #compute waypoint direction 
-
-        phi_wp = np.atan2(y_err, x_err)
-
-        delta_phi = angle_rad_wrapper(phi_wp - phi)
-
-
-        # compute left turn, right turn, or straight distances
-
-        left_turn_center = (current_pose[0] - r_min*np.sin(phi), 
-                            current_pose[1] + r_min*np.cos(phi))
-        
-        right_turn_center = (current_pose[0] + r_min*np.sin(phi), 
-                            current_pose[1] - r_min*np.cos(phi))
-        
-        #for left turn
-        alpha_l = np.arctan2(next_wpt[1] - left_turn_center[1],
-                             next_wpt[0] - left_turn_center[0])
-        
-        d_l = np.sqrt(((next_wpt[0] - left_turn_center[0])**2) + ((next_wpt[1] - left_turn_center[1])**2)) 
-        
-        tangent_point_angle_l = alpha_l + np.arccos(r_min / d_l)
-
-        arc_len_l = r_min * abs(angle_rad_wrapper(tangent_point_angle_l - phi))
-        
-
-        #for right turn
-
-        alpha_r = np.arctan2(next_wpt[1] - right_turn_center[1],
-                             next_wpt[0] - right_turn_center[0])
-        
-        d_r = np.sqrt(((next_wpt[0] - right_turn_center[0])**2) + ((next_wpt[1] - right_turn_center[1])**2)) 
-        
-        tangent_point_angle_r = alpha_r - np.arccos(r_min / d_r)
-
-        arc_len_r = r_min * abs(angle_rad_wrapper(tangent_point_angle_r - phi))
-
-        #straight path distance
-
-        straight_length = np.linalg.norm(np.array(next_wpt) - np.array(current_pose))
-
-        if (abs(delta_phi) < np.deg2rad(self.phi_threshold)):  #straight path is optimal
-            des_heading = phi
-            des_v = self.v_cruise
-
+        # Compute desired flight path angle
+        K_h = 3.0  # gain on hdot --> higher = steeper gamma
+        if horz_dist_err == 0:
+            des_gamma = 0
         else:
-            #if left shorter:
-            if ((arc_len_l + straight_length) <= (arc_len_r + straight_length)):
-                des_heading = np.arctan2((current_pose[1] - left_turn_center[1]),
-                                         (current_pose[0] - left_turn_center[0])) + (np.pi / 2)
-                
-                
-                
-            else:
-                des_heading = np.arctan2((current_pose[1] - right_turn_center[1]),
-                                         (current_pose[0] - right_turn_center[0])) - (np.pi / 2)
-                
-            #calculate desired velocity
-
-           
-                
-        #calculate desired gamma
-        del_h = next_wpt[2] - current_pose[2]
-
-        dxy = np.sqrt(((next_wpt[0] - current_pose[0])**2) + ((next_wpt[1] - current_pose[1])**2))
-
-        des_gamma = np.arctan2(del_h, dxy)
-
-        
-
-
-
-
-
-        
-        
-
-
+            des_gamma = (
+                K_h * z_err / horz_dist_err
+            )  # Alternatively, this can be calculated from vertical-track error
+            # des_gamma = np.arctan((K_h*z_err)/horz_dist_err) #Alternatively, this can be calculated from cross-track error
 
         # # Compute along-track and cross-track error
         V_vector = np.array([Vx_speed, Vy_speed])
@@ -173,8 +94,30 @@ class XTrack_NAV_lookAhead:
             0.0, path_len - np.clip(along_track_err_w0, 0.0, path_len)
         )
         cross_track_err = np.dot(pose_vect, unit_normal)  # signed
-                            
-                    
+
+        # Dynamic look-ahead (speed-based)
+        V_speed_horz = max(np.linalg.norm([Vx_speed, Vy_speed]), 1e-3)
+        Ld_nom = np.clip(
+            V_speed_horz * self.lookahead_time_s,
+            self.lookahead_min_m,
+            self.lookahead_max_m,
+        )
+        Ld_eff = min(Ld_nom, along_track_err_w1)
+
+        # Vector-field heading: tangent + lateral correction by cross-track
+        des_heading = path_angle + np.arctan2(-cross_track_err, Ld_eff)
+        des_heading = (des_heading + np.pi) % (2 * np.pi) - np.pi
+
+        if verbose == True:
+            print(
+                f"x_t : {x_t:.2f}\
+                    \ny_t : {y_t:.2f}\
+                    \nAlong-Track Error from w0: {along_track_err_w0:.2f}\
+                    \nAlong-Track Error from w1: {along_track_err_w1:.2f}\
+                    \nCross-Track Error : {cross_track_err:.2f}\
+                    \nPath Tangential Angle (Gamma_p): {gamma_p:0.2f}\
+                    \nDesired Heading : {des_heading:0.2f}"
+            )
 
         return des_v, des_gamma, des_heading, along_track_err_w1, cross_track_err
 
@@ -239,4 +182,3 @@ class XTrack_NAV_lookAhead:
             print(f"Updated Waypoint Index: {self.current_WP_ind}")
 
         return self.current_WP_ind
-
