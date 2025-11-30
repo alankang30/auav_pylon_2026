@@ -1,7 +1,7 @@
 import numpy as np
 
 ######################
-# Waypoint Target Algorithm with dubins for heading
+# Waypoint Target Algorithm with cross-track flow field and Alongtrack switching modes
 ######################
 
 
@@ -30,12 +30,12 @@ class XTrack_NAV_lookAhead:
         self.wpt_rad = 3.0  # allowable error from target waypoint (m)
 
         self.phi_threshold = 12 #phi threshold in degrees
+        self.g = 9.81
 
         self.wpt_switching_distance = (
             1.0  # Look ahead for x meters along track and jump to next waypoint
         )
         self.path_distance_buf = 5.0  # Cross-track distance buffer
-        self.g = 9.81
 
         self.lookahead_time_s = 2.0  # seconds to look ahead along path
         self.lookahead_min_m = 2.0  # never look ahead less than this distance
@@ -108,74 +108,22 @@ class XTrack_NAV_lookAhead:
         Ld_eff = min(Ld_nom, along_track_err_w1)
 
         # Vector-field heading: tangent + lateral correction by cross-track
+
+
         phi = np.arctan2(Vy_speed, Vx_speed) #current horizontal angle
 
         phi_wp = np.atan2(y_err, x_err)
 
         delta_phi = angle_rad_wrapper(phi_wp - phi)
 
-        v_g = np.sqrt(Vx_speed**2 + Vy_speed**2) #ground speed
-        phi = np.arctan2(Vy_speed, Vx_speed) #current horizontal angle
-
-        r_min = (v_g**2) / (self.g * np.tan(np.deg2rad(30))) #min turning radius
-
-        # compute left turn, right turn, or straight distances
-
-        left_turn_center = (current_pose[0] - r_min*np.sin(phi), 
-                            current_pose[1] + r_min*np.cos(phi))
-        
-        right_turn_center = (current_pose[0] + r_min*np.sin(phi), 
-                            current_pose[1] - r_min*np.cos(phi))
-        
-        #for left turn
-        alpha_l = np.arctan2(next_wpt[1] - left_turn_center[1],
-                             next_wpt[0] - left_turn_center[0])
-        
-        d_l = np.sqrt(((next_wpt[0] - left_turn_center[0])**2) + ((next_wpt[1] - left_turn_center[1])**2)) 
-        
-        tangent_point_angle_l = alpha_l + np.arccos(r_min / d_l)
-
-        arc_len_l = r_min * abs(angle_rad_wrapper(tangent_point_angle_l - phi))
-        
-
-        #for right turn
-
-        alpha_r = np.arctan2(next_wpt[1] - right_turn_center[1],
-                             next_wpt[0] - right_turn_center[0])
-        
-        d_r = np.sqrt(((next_wpt[0] - right_turn_center[0])**2) + ((next_wpt[1] - right_turn_center[1])**2)) 
-        
-        tangent_point_angle_r = alpha_r - np.arccos(r_min / d_r)
-
-        arc_len_r = r_min * abs(angle_rad_wrapper(tangent_point_angle_r - phi))
-
-        #straight path distance
-
-        straight_length = np.linalg.norm(np.array(next_wpt) - np.array(current_pose))
-
         if (abs(delta_phi) < np.deg2rad(self.phi_threshold)):  #straight path is optimal
             des_heading = angle_rad_wrapper(path_angle)
-
             des_v = self.v_cruise
 
         else:
 
-            #if left shorter:
-            if ((arc_len_l + straight_length) <= (arc_len_r + straight_length)):
-                des_heading = path_angle + (v_g / r_min)*self.dt
-                
-                des_heading = angle_rad_wrapper(des_heading)
-
-                
-                
-              #if right shorter  
-            else:
-                des_heading = path_angle - (v_g / r_min)*self.dt
-                des_heading = angle_rad_wrapper(des_heading)
-
-
-           # des_heading = path_angle + np.arctan2(-cross_track_err, Ld_eff)
-            #des_heading = (des_heading + np.pi) % (2 * np.pi) - np.pi
+            des_heading = path_angle + np.arctan2(-cross_track_err, Ld_eff)
+            des_heading = (des_heading + np.pi) % (2 * np.pi) - np.pi
 
         if verbose == True:
             print(

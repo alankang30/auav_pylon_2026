@@ -34,6 +34,24 @@ control_point = [
     (-10, -5, alt),
 ]
 """
+
+#safer waypoints:
+"""
+alt = 7.0
+
+control_point = [
+    (-10, 1, alt),
+    (-30.0, -10, alt),
+    (-30, -27.0, 6.5),
+
+    (0, -40, 5.5),
+
+    (30.00, -35.0, 5.5),
+    (26.50, 1.2, 5),
+    
+    
+    (-10, 1.2, alt),
+] """
 # ## SIM
 alt = 7.0
 control_point = [
@@ -48,7 +66,8 @@ control_point = [
     
     (10, 0, 6),
     (-10, 0, alt),
-]  # Rectangle Circuit Full Facility, const altitude
+]
+  # Rectangle Circuit Full Facility, const altitude
 
 # Get coordinates for reference line
 ref_x_list = [point[0] for point in control_point]
