@@ -11,9 +11,9 @@ from tf_transformations import euler_from_quaternion
 import casadi as ca
 import numpy as np
 
-from auav_pylon_2026.tecs_controller_xtrack_sample import TECSControl_cub
+from auav_pylon_2026.tecs_controller_xtrack_og import TECSControl_cub
 
-from auav_pylon_2026.cross_tracker_nav_sample import *
+from auav_pylon_2026.cross_tracker_nav_og import *
 
 
 def wrap(x):
@@ -70,21 +70,96 @@ control_point = [
     (-10, 0, alt),
 ]
 """
+#
 # ## SIM
-alt = 5.0
-control_point = [
-    (-10, 0, alt),
-    (-28.0, -10, alt),
-    (-28, -27.0, alt),
-
-    (0, -40, alt),
-
-    (30.00, -33.0, alt),
-    (25.00, 0, alt),
+alt = 3.0
+# control_point = [
+#     (-10, 0, alt),
+#     (-29.0, -10, alt),
     
-    (10, 0, alt),
-    (-10, 0, alt),
+#     (-27, -27.0, alt),
+
+#     (0, -40, alt),
+
+#     (25.0, -34.0, alt),
+#     (16, 0, alt),
+    
+#     (4.0, 0, alt),
+#     (-10, 0, alt),
+    
+#     (-29.0, -10, alt),
+    
+#     (-27, -27.0, alt),
+
+#     (0, -40, alt),
+
+#     (25.0, -34.0, alt),
+#     (16, 0, alt),
+    
+#     (4.0, 0, alt),
+#     (-10, 0, alt),
+    
+#     (-40, 0, alt),
+    
+#     (-35, -27.0, alt),
+
+#     (0, -40, alt),
+
+#     (25.0, -34.0, alt),
+#     (16, 0, alt),
+    
+#     (4.0, 0, alt),
+#     (-10, 0, alt),
+# ]
+
+# control_point = [
+#     (-5, -10, alt),
+#     (-5, 10, alt),
+#     (10, 10, alt),
+#     (10, -15, alt),
+#     (2, -10, alt),
+#     (-5, -10, alt),    
+# ]
+
+# control_point = [
+#     (-5, -10, alt),
+#     (-5, 10, alt),
+#     (10, 10, alt),
+#     (10, -15, alt),
+#     (2, -10, alt),
+#     (-5, -10, alt),    
+# ]
+control_point = [
+    (-10, -11.5, alt),
+    (-10, 11.5, alt),
+    (20, 11.5, alt),
+    (20, -11.5, alt),
+    (-10, -11.5, alt),
 ]
+control_point = [
+    (-8.5, -13, alt),
+    # (-6, 0, alt),
+    (-8.5, 11.5, alt),
+    (19.5, 11.5, alt),
+    (19.5, -13, alt),
+    (-8.5, -13, alt),
+]
+control_point = [
+    (-3.5, -13, alt),
+    # (-6, 0, alt),
+    (-3.5, 10.5, alt),
+    (4, 11, alt),
+    (11, 10.5, alt),
+    (11, -13, alt),
+    (4, -12, alt),
+    (-3.5, -13, alt),
+]
+    # (-5, 10, alt),
+    # (10, 10, alt),
+    # (10, -15, alt),
+    # (2, -10, alt),
+    # (-5, -10, alt),    
+
   # Rectangle Circuit Full Facility, const altitude
 
 # Get coordinates for reference line
@@ -433,8 +508,8 @@ class PIDPublisher(Node):
             self.takeoff_time += self.dt
 
             # Throttle ramp with floor/ceiling
-            self.throttle = ca.fmin(1.0, ca.fmax(0.7, self.throttle + 2.0 * self.dt))
-
+          #  self.throttle = ca.fmin(1.0, ca.fmax(0.7, self.throttle + 2.0 * self.dt))
+            self.throttle =1
             self.rudder = 0.0  # No yaw during takeoff
             self.aileron = 0.0  # Wings-level during takeoff
 
@@ -514,7 +589,7 @@ class PIDPublisher(Node):
                         int(self.time / self.dt), self.ref_data, self.actual_data
                     )
                 )
-                self.throttle = 0.6
+                #self.throttle = 0.6
                 self.current_WP_ind = self.wpt_planner.check_arrived(
                     along_track_err, v_array, verbose=False
                 )
